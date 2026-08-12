@@ -105,5 +105,117 @@ def create_expense():
         'message': 'Expense created successfully'
     }), 201
 
+
+@app.get("/api/users/<int:user_id>")
+def get_user_by_id(user_id):
+    print(user_id)
+    connection = sqlite3.connect(DB_NAME)
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    cursor.execute('SELECT id, username FROM users WHERE id = ?', (user_id,))
+    row = cursor.fetchone()
+    user_information = dict(row)
+  
+    print(row)
+    connection.close()
+    return jsonify({
+        'success': True,
+        'message': 'User retrieved successfully',
+        'data': user_information
+    })
+
+
+
+
+
+@app.get("/api/expenses/<int:user_id>")
+def get_expenses_by_user_id(user_id):
+    connection = sqlite3.connect(DB_NAME)
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+   
+    cursor.execute('SELECT * FROM budgets WHERE user_id = ?', (user_id,))
+    rows = cursor.fetchall()
+    
+    if not rows:
+        return jsonify({
+            'success': False,
+            'message': 'Expenses not found'
+        }), 404
+    
+    expenses_information = [dict(row) for row in rows]
+    connection.close()
+
+    return jsonify({
+        'success': True,
+        'message': 'Expenses retrieved successfully',
+        'data': expenses_information
+    }), 200
+
+
+
+
+# DELETE http://127.0.0.1:5000/api/expenses/<int:expense_id>
+@app.delete("/api/expenses/<int:expense_id>")
+def delete_expense(expense_id):
+    connection = sqlite3.connect(DB_NAME)
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT id FROM budgets WHERE id = ?", (expense_id,))
+    row = cursor.fetchone()
+
+    if not row:
+        connection.close()
+        return jsonify({
+            "success": False,
+            "message": "Expense not found"
+        }), 404
+
+    cursor.execute("DELETE FROM budgets WHERE id = ?", (expense_id,))
+    connection.commit()
+    connection.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Expense deleted successfully"
+    }), 200
+
+
+# UPDATE http://127.0.0.1:5000/api/expenses/<int:expense_id>
+@app.put("/api/expenses/<int:expense_id>")
+def update_expense(expense_id):
+   
+    updated_expense = request.get_json()
+    title = updated_expense["title"]
+    description = updated_expense["description"]
+    amount = updated_expense["amount"]
+    category = updated_expense["category"]
+
+    connection = sqlite3.connect(DB_NAME)
+    cursor = connection.cursor()
+
+   
+    cursor.execute("SELECT id FROM budgets WHERE id=?", (expense_id,))
+    row = cursor.fetchone()
+
+    if not row:
+        connection.close()
+        return jsonify({
+            "success": False,
+            "message": "Expense not found"
+        }), 404
+
+    cursor.execute(
+        "UPDATE budgets SET title=?, description=?, amount=?, category=? WHERE id=?",
+        (title, description, amount, category, expense_id)
+    )
+    connection.commit()
+    connection.close()
+
+    return jsonify({
+        "success": True,
+        "message": "User updated successfully"
+    }), 200
 init_db()
 app.run(debug=True)
