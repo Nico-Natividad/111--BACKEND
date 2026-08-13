@@ -1,5 +1,5 @@
 from datetime import date
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 import sqlite3
 
 app = Flask(__name__)
@@ -215,7 +215,29 @@ def update_expense(expense_id):
 
     return jsonify({
         "success": True,
-        "message": "User updated successfully"
+        "message": "Expense updated successfully"
     }), 200
+
+
+@app.get("/")
+@app.get("/index")
+@app.get("/home")
+def home():
+    my_name= 'NICO'
+  
+    return render_template("home.html", name=my_name)
+
+@app.get("/contact")
+def contact():
+    return render_template("contact.html")
+
+@app.get("/about")
+def about():
+    return render_template("about.html")
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("404.html"), 404
+
 init_db()
 app.run(debug=True)
